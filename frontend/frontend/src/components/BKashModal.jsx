@@ -16,7 +16,7 @@ const BKashModal = ({ isOpen, onClose, onPaymentSuccess, amount }) => {
       setTimeout(() => {
         setStep(2);
         setLoading(false);
-      }, 1500);
+      }, 1500);Bro 
     } else {
       setLoading(true);
       setTimeout(() => {

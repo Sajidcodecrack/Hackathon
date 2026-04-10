@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
-import { Fuel, MapPin, LayoutDashboard, LogOut, User as UserIcon, Calendar, Receipt, Scan, Car } from 'lucide-react';
+import { Fuel, MapPin, LayoutDashboard, LogOut, User as UserIcon, Calendar, Receipt, Scan, Car, ShieldAlert } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -36,6 +36,7 @@ const Navbar = () => {
     { path: '/bookings', label: 'Bookings', icon: Calendar },
     { path: '/transactions', label: 'Transactions', icon: Receipt },
     { path: '/operator', label: 'Scan QR', icon: Scan },
+    { path: '/govt-analytics', label: 'Govt', icon: ShieldAlert },
   ];
 
   return (

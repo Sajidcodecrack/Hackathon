@@ -20,6 +20,7 @@ import OperatorScan from './pages/OperatorScan';
 import Profile from './pages/Profile';
 import Landing from './pages/Landing';
 import AIAssistant from './components/AIAssistant';
+import GovtDashboard from './pages/GovtDashboard';
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
                 <Route path="/vehicles" element={<Vehicles />} />
                 <Route path="/operator" element={<OperatorScan />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/govt-analytics" element={<GovtDashboard />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Route>
             </Routes>

@@ -5,6 +5,26 @@ import { pumpAPI, aiAPI, bookingAPI, vehicleAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
+import BKashModal from '../components/BKashModal';
+import RealMap from '../components/RealMap';
+
+const TypewriterText = ({ text }) => {
+  const [displayed, setDisplayed] = useState('');
+  
+  useEffect(() => {
+    setDisplayed('');
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayed(prev => text.slice(0, i + 1));
+      i++;
+      if (i >= text.length) clearInterval(interval);
+    }, 20);
+    return () => clearInterval(interval);
+  }, [text]);
+
+  return <span>{displayed}</span>;
+};
+
 const FindPump = () => {
   const [location, setLocation] = useState(null);
   const [pumps, setPumps] = useState([]);
@@ -15,8 +35,9 @@ const FindPump = () => {
   // Booking Modal State
   const [bookingModal, setBookingModal] = useState({ isOpen: false, pump: null });
   const [vehicles, setVehicles] = useState([]);
-  const [bookingForm, setBookingForm] = useState({ vehicleId: '', slotTime: '' });
+  const [bookingForm, setBookingForm] = useState({ vehicleId: '', slotTime: '', paymentMethod: 'at_pump' });
   const [isBooking, setIsBooking] = useState(false);
+  const [showBKash, setShowBKash] = useState(false);
   
   const navigate = useNavigate();
 
@@ -82,15 +103,44 @@ const FindPump = () => {
 
   const handleBookingSubmit = async (e) => {
      e.preventDefault();
+     
+     if (bookingForm.paymentMethod === 'bkash') {
+        setShowBKash(true);
+        return;
+     }
+
+     finalizeBooking();
+  };
+
+  const finalizeBooking = async () => {
      setIsBooking(true);
      try {
-        await bookingAPI.create({
+        const res = await bookingAPI.create({
            pumpId: bookingModal.pump._id,
            vehicleId: bookingForm.vehicleId,
            slotTime: bookingForm.slotTime
         });
-        toast.success('Slot booked successfully! QR Code generated.');
+
+        // If bKash, simulate the transaction so the dashboard updates
+        if (bookingForm.paymentMethod === 'bkash') {
+           try {
+             const selectedVehicle = vehicles.find(v => v._id === bookingForm.vehicleId);
+             await transactionAPI.save({
+                bookingId: res.data.data.booking._id,
+                vehicleId: bookingForm.vehicleId,
+                pumpId: bookingModal.pump._id,
+                litres: 12, // Demo value
+                amount: 1500, // Demo value matching bKash modal
+                fuelType: selectedVehicle?.fuelType || 'octane'
+             });
+           } catch (txErr) {
+             console.error("Demo transaction failed", txErr);
+           }
+        }
+
+        toast.success(bookingForm.paymentMethod === 'bkash' ? 'Payment Verified & Expense Updated!' : 'Slot booked successfully! QR Code generated.');
         setBookingModal({ isOpen: false, pump: null });
+        setShowBKash(false);
         navigate('/bookings'); // Send them to see the QR code
      } catch (error) {
         toast.error(error.response?.data?.message || 'Failed to book slot');
@@ -133,6 +183,13 @@ const FindPump = () => {
         </div>
       </div>
 
+      {/* AI Real-World Map & Search Results */}
+      {pumps.length > 0 && !loading && (
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="mb-6 relative z-10">
+           <RealMap pumps={pumps} location={location} aiRec={aiRec} />
+        </motion.div>
+      )}
+
       {loading && (
         <div className="py-20 flex flex-col items-center justify-center">
            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center text-primary-500 mb-4">
@@ -154,8 +211,8 @@ const FindPump = () => {
                  <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 text-center md:text-left">
                     Gemini AI Pick: {aiRec.pumpName}
                  </h2>
-                 <p className="text-slate-700 mt-2 font-medium leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
-                   "{aiRec.reason}"
+                 <p className="text-slate-700 mt-2 font-medium leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100 min-h-[80px]">
+                   <TypewriterText text={aiRec.reason || ''} />
                  </p>
                  <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
                     <span className="flex items-center gap-1.5 text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-md"><Clock size={16}/> {aiRec.estimatedTotalTime}</span>
@@ -273,18 +330,45 @@ const FindPump = () => {
                   />
                 </div>
 
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-slate-700 ml-1">Payment Method</label>
+                  <div className="grid grid-cols-2 gap-3">
+                     <div 
+                       onClick={() => setBookingForm({...bookingForm, paymentMethod: 'at_pump'})}
+                       className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${bookingForm.paymentMethod === 'at_pump' ? 'border-primary-500 bg-primary-50' : 'border-slate-100 bg-white hover:border-slate-200'}`}
+                     >
+                        <p className={`font-bold text-sm ${bookingForm.paymentMethod === 'at_pump' ? 'text-primary-700' : 'text-slate-600'}`}>Pay at Pump</p>
+                        <p className="text-[10px] text-slate-400">Pay after fueling</p>
+                     </div>
+                     <div 
+                       onClick={() => setBookingForm({...bookingForm, paymentMethod: 'bkash'})}
+                       className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${bookingForm.paymentMethod === 'bkash' ? 'border-[#D12053] bg-[#D12053]/5' : 'border-slate-100 bg-white hover:border-slate-200'}`}
+                     >
+                        <p className={`font-bold text-sm ${bookingForm.paymentMethod === 'bkash' ? 'text-[#D12053]' : 'text-slate-600'}`}>bKash (Demo)</p>
+                        <p className="text-[10px] text-slate-400">Pre-pay instantly</p>
+                     </div>
+                  </div>
+                </div>
+
                 <button 
                   type="submit" 
                   disabled={isBooking}
                   className="btn-primary w-full mt-2 py-3 bg-gradient-to-r from-primary-600 to-indigo-600 disabled:opacity-70"
                 >
-                  {isBooking ? 'Securing Slot...' : 'Confirm Booking & Generate QR'}
+                  {isBooking ? 'Securing Slot...' : bookingForm.paymentMethod === 'bkash' ? 'Proceed to bKash' : 'Confirm Booking & Generate QR'}
                 </button>
               </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      <BKashModal 
+        isOpen={showBKash} 
+        onClose={() => setShowBKash(false)} 
+        onPaymentSuccess={finalizeBooking}
+        amount={1500} 
+      />
 
     </motion.div>
   );

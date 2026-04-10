@@ -8,7 +8,26 @@ const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
 
-  if (!user) return null; // Don't show navbar if not logged in
+  const isLanding = location.pathname === '/';
+
+  if (!user && !isLanding) return null; // Don't show regular navbar if not logged in
+
+  if (!user && isLanding) {
+    return (
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6 flex justify-between items-center max-w-7xl mx-auto">
+        <div className="flex items-center gap-2">
+           <div className="bg-primary-500 p-2 rounded-xl text-white">
+              <Fuel size={24} strokeWidth={2.5} />
+           </div>
+           <span className="font-black text-2xl tracking-tighter text-slate-900">SmartFuel</span>
+        </div>
+        <div className="flex gap-4">
+           <Link to="/login" className="text-slate-600 font-bold hover:text-slate-900 transition-all">Login</Link>
+           <Link to="/register" className="bg-slate-900 text-white px-6 py-2 rounded-xl font-bold hover:bg-black transition-all shadow-lg">Sign Up</Link>
+        </div>
+      </nav>
+    );
+  }
 
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },

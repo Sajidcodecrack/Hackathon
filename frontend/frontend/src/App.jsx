@@ -18,6 +18,8 @@ import BookingHistory from './pages/BookingHistory';
 import Vehicles from './pages/Vehicles';
 import OperatorScan from './pages/OperatorScan';
 import Profile from './pages/Profile';
+import Landing from './pages/Landing';
+import AIAssistant from './components/AIAssistant';
 
 function App() {
   return (
@@ -31,9 +33,13 @@ function App() {
           </div>
 
           <Navbar />
+          <AIAssistant />
           
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
+          <main className="flex-1 max-w-7xl w-full mx-auto px-0 sm:px-0 lg:px-0 py-0 flex flex-col">
             <Routes>
+              {/* Root Landing Page */}
+              <Route path="/" element={<Landing />} />
+
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -48,12 +54,8 @@ function App() {
                 <Route path="/vehicles" element={<Vehicles />} />
                 <Route path="/operator" element={<OperatorScan />} />
                 <Route path="/profile" element={<Profile />} />
-                {/* Fallback */}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Route>
-              
-              {/* Root redirect */}
-              <Route path="/" element={<Navigate to="/login" replace />} />
             </Routes>
           </main>
 
